@@ -1,10 +1,7 @@
+import Dashboard from "./pages/Dashboard";
+
 function App() {
-  return (
-    <div>
-      <h1>Event Reminder App</h1>
-      <p>My first startup app.</p>
-    </div>
-  )
+  return <Dashboard />;
 }
 
-export default App
+export default App;
