@@ -6,10 +6,24 @@ interface EventCardProps {
 
 function EventCard({ event }: EventCardProps) {
   return (
-    <div>
+    <div className="event-card">
       <h3>{event.title}</h3>
-      <p>Date: {event.date}</p>
-      <p>Reminders: {event.reminders}</p>
+
+      <p>
+        <strong>Date:</strong> {event.date}
+      </p>
+
+      <p>
+        <strong>Time:</strong> {event.startTime} - {event.endTime}
+      </p>
+
+      <p>
+        <strong>Location:</strong> {event.location}
+      </p>
+
+      <p>
+        <strong>Reminders:</strong> {event.reminders.length}
+      </p>
     </div>
   );
 }
