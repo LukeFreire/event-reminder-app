@@ -5,8 +5,9 @@ export interface Event {
   title: string;
   description: string;
   date: string;
+  callTime: string;
   startTime: string;
-  endTime: string;
+  endTime?: string;
   location: string;
   reminders: Reminder[];
   createdBy: string;

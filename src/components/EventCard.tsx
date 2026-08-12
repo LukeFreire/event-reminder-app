@@ -14,6 +14,10 @@ function EventCard({ event }: EventCardProps) {
       </p>
 
       <p>
+        <strong>Call Time:</strong> {event.callTime}
+      </p>
+
+      <p>
         <strong>Time:</strong> {event.startTime} - {event.endTime}
       </p>
 

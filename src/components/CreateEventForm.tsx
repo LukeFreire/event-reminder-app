@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Event } from "../types/Event";
 
+
 interface CreateEventFormProps {
   onCreateEvent: (event: Event) => void;
   onCancel: () => void;
@@ -13,6 +14,7 @@ function CreateEventForm({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
+  const [callTime, setCallTime] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [location, setLocation] = useState("");
@@ -25,6 +27,7 @@ function CreateEventForm({
       title,
       description,
       date,
+      callTime,
       startTime,
       endTime,
       location,
@@ -37,6 +40,7 @@ function CreateEventForm({
     setTitle("");
     setDescription("");
     setDate("");
+    setCallTime("");
     setStartTime("");
     setEndTime("");
     setLocation("");
@@ -59,48 +63,61 @@ function CreateEventForm({
         placeholder="Description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
+        required
       />
 
       <input
-        type="date"
+        type={date ? "date" : "text"}
+        placeholder="Date"
         value={date}
+        onFocus={(e) => {
+          e.currentTarget.type = "date";
+        }}
         onChange={(e) => setDate(e.target.value)}
         required
       />
 
       <input
-        type="time"
+        type="text"
+        placeholder="Call Time"
+        value={callTime}
+        onChange={(e) => setCallTime(e.target.value)}
+        required
+      />
+
+      <input
+        type={startTime ? "time" : "text"}
+        placeholder="Start Time"
         value={startTime}
+        onFocus={(e) => {
+          e.currentTarget.type = "time";
+        }}
         onChange={(e) => setStartTime(e.target.value)}
         required
       />
 
       <input
-        type="time"
+        type={endTime ? "time" : "text"}
+        placeholder="End Time (Optional)"
         value={endTime}
+        onFocus={(e) => {
+          e.currentTarget.type = "time";
+        }}
         onChange={(e) => setEndTime(e.target.value)}
-        required
       />
 
-      <input
-        type="text"
-        placeholder="Location"
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-      />
+    .<div className="form-buttons">
+    <button className="primary-button" type="submit">
+        Create Event
+    </button>
 
-        <div className="form-buttons">
-        <button className="primary-button" type="submit">
-            Create Event
-        </button>
-
-        <button
-            className="secondary-button"
-            type="button"
-            onClick={onCancel}
-        >
-            Cancel
-        </button>
+    <button
+        className="secondary-button"
+        type="button"
+        onClick={onCancel}
+    >
+        Cancel
+    </button>
 </div>
     </form>
   );

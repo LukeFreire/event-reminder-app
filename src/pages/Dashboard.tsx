@@ -9,6 +9,7 @@ const initialEvents: Event[] = [
     title: "Sunday Service",
     description: "Main Sunday morning service",
     date: "2026-06-28",
+    callTime: "08:00",
     startTime: "09:00",
     endTime: "10:30",
     location: "Main Sanctuary",
