@@ -3,7 +3,7 @@ import type { Event } from "../types/Event";
 
 
 interface CreateEventFormProps {
-  onCreateEvent: (event: Event) => void;
+  onCreateEvent: (event: Omit<Event, "id" | "reminders" | "createdBy">) => void;
   onCancel: () => void;
 }
 
@@ -22,8 +22,7 @@ function CreateEventForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const newEvent: Event = {
-      id: Date.now().toString(),
+    onCreateEvent({
       title,
       description,
       date,
@@ -31,11 +30,7 @@ function CreateEventForm({
       startTime,
       endTime,
       location,
-      createdBy: "demo-user",
-      reminders: [],
-    };
-
-    onCreateEvent(newEvent);
+    });
 
     setTitle("");
     setDescription("");
@@ -78,9 +73,12 @@ function CreateEventForm({
       />
 
       <input
-        type="text"
+        type={callTime ? "time" : "text"}
         placeholder="Call Time"
         value={callTime}
+        onFocus={(e) => {
+          e.currentTarget.type = "time";
+        }}
         onChange={(e) => setCallTime(e.target.value)}
         required
       />
@@ -106,19 +104,27 @@ function CreateEventForm({
         onChange={(e) => setEndTime(e.target.value)}
       />
 
-    .<div className="form-buttons">
-    <button className="primary-button" type="submit">
-        Create Event
-    </button>
+      <input
+        type="text"
+        placeholder="Location"
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        required
+      />
 
-    <button
-        className="secondary-button"
-        type="button"
-        onClick={onCancel}
-    >
-        Cancel
-    </button>
-</div>
+      <div className="form-buttons">
+        <button className="primary-button" type="submit">
+          Create Event
+        </button>
+
+        <button
+          className="secondary-button"
+          type="button"
+          onClick={onCancel}
+        >
+          Cancel
+        </button>
+      </div>
     </form>
   );
 }

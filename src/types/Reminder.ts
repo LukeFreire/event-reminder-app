@@ -12,4 +12,12 @@ export interface Reminder {
   triggerTime: string;
   assignedTo: string[];
   status: ReminderStatus;
+  teamId: string | null;
+  teamName: string | null;
+}
+
+export interface MyReminder extends Reminder {
+  eventTitle: string;
+  eventDate: string;
+  eventLocation: string;
 }
