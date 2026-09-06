@@ -64,6 +64,19 @@ body {
   color: transparent;
 }
 
+.header-compact {
+  margin-bottom: 24px;
+}
+
+.header-compact h1 {
+  font-size: 28px;
+}
+
+.header-compact p {
+  font-size: 14px;
+  margin-top: 6px;
+}
+
 .header p {
   color: var(--text-muted);
   font-size: 19px;
@@ -165,6 +178,38 @@ body {
   letter-spacing: -0.01em;
 }
 
+.event-card-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.event-card-heading h3 {
+  margin: 0;
+}
+
+.event-card-summary {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.expand-toggle {
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.event-card-details {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
 .event-card p {
   margin: 8px 0;
   color: var(--text-muted);
@@ -201,9 +246,17 @@ body {
 }
 
 .primary-button:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+  background: var(--surface-raised);
+  color: var(--text-faint);
+  box-shadow: none;
+}
+
+.primary-button:disabled:hover {
+  filter: none;
+  transform: none;
+  box-shadow: none;
 }
 
 .create-form {
@@ -329,12 +382,14 @@ body {
 .reminder-title {
   margin: 0;
   font-weight: 600;
+  text-align: left;
 }
 
 .reminder-meta {
   margin: 4px 0 0;
   color: var(--text-faint);
   font-size: 13px;
+  text-align: left;
 }
 
 .reminder-item select {
@@ -365,7 +420,8 @@ body {
   font-size: 13px;
 }
 
-.status-badge {
+.status-badge,
+.status-select {
   padding: 5px 12px;
   border-radius: 999px;
   font-size: 12px;
@@ -373,8 +429,13 @@ body {
   text-transform: capitalize;
   white-space: nowrap;
   border: 1px solid var(--border-hover);
-  background: var(--surface-raised);
+  background-color: var(--surface-raised);
   color: var(--text-muted);
+}
+
+.status-select {
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .status-pending {

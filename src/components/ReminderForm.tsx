@@ -20,9 +20,7 @@ function ReminderForm({
   onCancel,
 }: ReminderFormProps) {
   const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
   const [triggerTime, setTriggerTime] = useState("");
-  const [assignedTo, setAssignedTo] = useState("");
   const [teamId, setTeamId] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
   const [isCreatingTeam, setIsCreatingTeam] = useState(false);
@@ -43,20 +41,14 @@ function ReminderForm({
 
     onCreateReminder({
       title,
-      message,
+      message: null,
       triggerTime,
-      assignedTo: assignedTo
-        .split(",")
-        .map((name) => name.trim())
-        .filter(Boolean),
       status: "pending",
       teamId: teamId || null,
     });
 
     setTitle("");
-    setMessage("");
     setTriggerTime("");
-    setAssignedTo("");
     setTeamId("");
   }
 
@@ -66,17 +58,9 @@ function ReminderForm({
 
       <input
         type="text"
-        placeholder="Reminder title"
+        placeholder="Reminder"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        required
-      />
-
-      <input
-        type="text"
-        placeholder="Message"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
         required
       />
 
@@ -91,13 +75,6 @@ function ReminderForm({
         required
       />
 
-      <input
-        type="text"
-        placeholder="Assigned to (comma-separated names)"
-        value={assignedTo}
-        onChange={(e) => setAssignedTo(e.target.value)}
-      />
-
       <select
         value={teamId === "" ? "" : teamId}
         onChange={(e) => {
@@ -108,7 +85,7 @@ function ReminderForm({
           }
         }}
       >
-        <option value="">No team</option>
+        <option value="">Assigned to (no team)</option>
         {teams.map((team) => (
           <option key={team.id} value={team.id}>
             {team.name}

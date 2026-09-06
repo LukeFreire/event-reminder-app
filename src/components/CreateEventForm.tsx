@@ -3,7 +3,9 @@ import type { Event } from "../types/Event";
 
 
 interface CreateEventFormProps {
-  onCreateEvent: (event: Omit<Event, "id" | "reminders" | "createdBy">) => void;
+  onCreateEvent: (
+    event: Omit<Event, "id" | "reminders" | "createdBy" | "liveStartedAt">
+  ) => void;
   onCancel: () => void;
 }
 

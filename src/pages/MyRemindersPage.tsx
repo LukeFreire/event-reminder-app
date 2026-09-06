@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { MyReminder, ReminderStatus } from "../types/Reminder";
+import { REMINDER_STATUSES } from "../types/Reminder";
 import * as teamsApi from "../lib/teamsApi";
 import * as eventsApi from "../lib/eventsApi";
 import { formatTime } from "../lib/formatTime";
@@ -8,13 +9,6 @@ interface MyRemindersPageProps {
   teamIds: string[];
   onBack: () => void;
 }
-
-const REMINDER_STATUSES: ReminderStatus[] = [
-  "pending",
-  "acknowledged",
-  "completed",
-  "missed",
-];
 
 function MyRemindersPage({ teamIds, onBack }: MyRemindersPageProps) {
   const [reminders, setReminders] = useState<MyReminder[]>([]);
@@ -78,7 +72,8 @@ function MyRemindersPage({ teamIds, onBack }: MyRemindersPageProps) {
                 </p>
                 <p className="reminder-meta">
                   {reminder.eventTitle} · {reminder.eventDate} ·{" "}
-                  {formatTime(reminder.triggerTime)} · {reminder.message}
+                  {formatTime(reminder.triggerTime)}
+                  {reminder.message ? ` · ${reminder.message}` : ""}
                 </p>
               </div>
 

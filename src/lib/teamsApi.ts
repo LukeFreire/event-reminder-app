@@ -13,9 +13,8 @@ interface MyReminderRow {
   id: string;
   event_id: string;
   title: string;
-  message: string;
+  message: string | null;
   trigger_time: string;
-  assigned_to: string[];
   status: ReminderStatus;
   team_id: string | null;
   teams: { name: string } | null;
@@ -122,7 +121,6 @@ export async function fetchRemindersForTeams(
       title: row.title,
       message: row.message,
       triggerTime: toHHMM(row.trigger_time),
-      assignedTo: row.assigned_to,
       status: row.status,
       teamId: row.team_id,
       teamName: row.teams?.name ?? null,

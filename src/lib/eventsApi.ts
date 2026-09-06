@@ -8,9 +8,8 @@ interface ReminderRow {
   id: string;
   event_id: string;
   title: string;
-  message: string;
+  message: string | null;
   trigger_time: string;
-  assigned_to: string[];
   status: ReminderStatus;
   team_id: string | null;
   teams: { name: string } | null;
@@ -26,6 +25,7 @@ interface EventRow {
   end_time: string | null;
   location: string;
   created_by: string;
+  live_started_at: string | null;
   reminders?: ReminderRow[];
 }
 
@@ -42,7 +42,6 @@ function mapReminder(row: ReminderRow): Reminder {
     title: row.title,
     message: row.message,
     triggerTime: toHHMM(row.trigger_time),
-    assignedTo: row.assigned_to,
     status: row.status,
     teamId: row.team_id,
     teamName: row.teams?.name ?? null,
@@ -60,6 +59,7 @@ function mapEvent(row: EventRow): Event {
     endTime: row.end_time ? toHHMM(row.end_time) : undefined,
     location: row.location,
     createdBy: row.created_by,
+    liveStartedAt: row.live_started_at,
     reminders: (row.reminders ?? []).map(mapReminder),
   };
 }
@@ -99,7 +99,7 @@ export async function createTeam(name: string): Promise<Team> {
 }
 
 export async function createEvent(
-  input: Omit<Event, "id" | "reminders">
+  input: Omit<Event, "id" | "reminders" | "liveStartedAt">
 ): Promise<Event> {
   const { data, error } = await supabase
     .from("events")
@@ -144,6 +144,33 @@ export async function deleteEvent(eventId: string): Promise<void> {
   if (error) throw error;
 }
 
+// Marks an event live (only the first call actually sets the timestamp --
+// the `.is(...)` filter makes this atomic, so a re-entry into Live View
+// later doesn't reset when the event "started"). Returns the timestamp
+// either way, so callers always know the true start time.
+export async function startLiveEvent(eventId: string): Promise<string> {
+  const { data: justStarted, error: updateError } = await supabase
+    .from("events")
+    .update({ live_started_at: new Date().toISOString() })
+    .eq("id", eventId)
+    .is("live_started_at", null)
+    .select("live_started_at")
+    .maybeSingle();
+
+  if (updateError) throw updateError;
+  if (justStarted) return justStarted.live_started_at as string;
+
+  const { data, error } = await supabase
+    .from("events")
+    .select("live_started_at")
+    .eq("id", eventId)
+    .single();
+
+  if (error) throw error;
+
+  return data.live_started_at as string;
+}
+
 export async function addReminder(
   eventId: string,
   input: Omit<Reminder, "id" | "eventId" | "teamName">
@@ -155,7 +182,6 @@ export async function addReminder(
       title: input.title,
       message: input.message,
       trigger_time: input.triggerTime,
-      assigned_to: input.assignedTo,
       status: input.status,
       team_id: input.teamId,
     })

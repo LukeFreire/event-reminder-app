@@ -4,13 +4,16 @@ import EventCard from "../components/EventCard";
 import type { Event } from "../types/Event";
 import type { Reminder, ReminderStatus } from "../types/Reminder";
 import type { Team } from "../types/Team";
+import type { Profile } from "../types/Profile";
 import CreateEventForm from "../components/CreateEventForm";
 import EventEditPage from "./EventEditPage";
 import LiveEventPage from "./LiveEventPage";
 import TeamsPage from "./TeamsPage";
 import MyRemindersPage from "./MyRemindersPage";
+import ManageUsersPage from "./ManageUsersPage";
 import * as eventsApi from "../lib/eventsApi";
 import * as teamsApi from "../lib/teamsApi";
+import * as usersApi from "../lib/usersApi";
 import { supabase } from "../lib/supabaseClient";
 
 interface DashboardProps {
@@ -21,6 +24,7 @@ function Dashboard({ session }: DashboardProps) {
   const [events, setEvents] = useState<Event[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [myTeams, setMyTeams] = useState<Team[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -28,24 +32,29 @@ function Dashboard({ session }: DashboardProps) {
   const [liveEventId, setLiveEventId] = useState<string | null>(null);
   const [showTeamsPage, setShowTeamsPage] = useState(false);
   const [showMyReminders, setShowMyReminders] = useState(false);
+  const [showManageUsers, setShowManageUsers] = useState(false);
+
+  const isAdmin = profile?.role === "admin";
 
   useEffect(() => {
     Promise.all([
       eventsApi.fetchEvents(),
       eventsApi.fetchTeams(),
       teamsApi.fetchMyTeams(session.user.id),
+      usersApi.fetchMyProfile(session.user.id),
     ])
-      .then(([fetchedEvents, fetchedTeams, fetchedMyTeams]) => {
+      .then(([fetchedEvents, fetchedTeams, fetchedMyTeams, fetchedProfile]) => {
         setEvents(fetchedEvents);
         setTeams(fetchedTeams);
         setMyTeams(fetchedMyTeams);
+        setProfile(fetchedProfile);
       })
       .catch(() => setError("Couldn't load events. Try refreshing."))
       .finally(() => setIsLoading(false));
   }, [session.user.id]);
 
   async function handleAddEvent(
-    input: Omit<Event, "id" | "reminders" | "createdBy">
+    input: Omit<Event, "id" | "reminders" | "createdBy" | "liveStartedAt">
   ) {
     const newEvent = await eventsApi.createEvent({
       ...input,
@@ -131,13 +140,25 @@ function Dashboard({ session }: DashboardProps) {
     setEditingEventId(null);
   }
 
+  async function handleGoLive(eventId: string) {
+    if (isAdmin) {
+      const liveStartedAt = await eventsApi.startLiveEvent(eventId);
+      setEvents(
+        events.map((event) =>
+          event.id === eventId ? { ...event, liveStartedAt } : event
+        )
+      );
+    }
+    setLiveEventId(eventId);
+  }
+
   const editingEvent = events.find((event) => event.id === editingEventId);
   const liveEvent = events.find((event) => event.id === liveEventId);
 
   if (liveEvent) {
     return (
       <div className="app-container">
-        <header className="header">
+        <header className="header header-compact">
           <h1>Live Event Production</h1>
           <p>Build timelines. Trigger reminders. Keep teams on track.</p>
         </header>
@@ -146,7 +167,12 @@ function Dashboard({ session }: DashboardProps) {
           <LiveEventPage
             event={liveEvent}
             session={session}
+            isAdmin={isAdmin}
+            myTeamIds={myTeams.map((team) => team.id)}
+            teams={teams}
             onExit={() => setLiveEventId(null)}
+            onAddReminder={handleAddReminder}
+            onCreateTeam={handleCreateTeam}
             onUpdateReminderStatus={handleUpdateReminderStatus}
           />
         </main>
@@ -181,6 +207,24 @@ function Dashboard({ session }: DashboardProps) {
           <MyRemindersPage
             teamIds={myTeams.map((team) => team.id)}
             onBack={() => setShowMyReminders(false)}
+          />
+        </main>
+      </div>
+    );
+  }
+
+  if (showManageUsers) {
+    return (
+      <div className="app-container">
+        <header className="header">
+          <h1>Live Event Production</h1>
+          <p>Build timelines. Trigger reminders. Keep teams on track.</p>
+        </header>
+
+        <main className="dashboard">
+          <ManageUsersPage
+            currentUserId={session.user.id}
+            onBack={() => setShowManageUsers(false)}
           />
         </main>
       </div>
@@ -233,12 +277,22 @@ function Dashboard({ session }: DashboardProps) {
               My Reminders
             </button>
           )}
-          <button
-            className="secondary-button"
-            onClick={() => setShowTeamsPage(true)}
-          >
-            Manage Teams
-          </button>
+          {isAdmin && (
+            <button
+              className="secondary-button"
+              onClick={() => setShowTeamsPage(true)}
+            >
+              Manage Teams
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              className="secondary-button"
+              onClick={() => setShowManageUsers(true)}
+            >
+              Manage Users
+            </button>
+          )}
           <button className="secondary-button" onClick={handleLogout}>
             Log out
           </button>
@@ -260,26 +314,29 @@ function Dashboard({ session }: DashboardProps) {
               <EventCard
                 key={event.id}
                 event={event}
+                isAdmin={isAdmin}
+                myTeamIds={myTeams.map((team) => team.id)}
                 onEditEvent={setEditingEventId}
-                onGoLive={setLiveEventId}
+                onGoLive={handleGoLive}
               />
             ))}
           </div>
         )}
 
-        {showCreateForm ? (
-          <CreateEventForm
-            onCreateEvent={handleAddEvent}
-            onCancel={() => setShowCreateForm(false)}
-          />
-        ) : (
-          <button
-            className="primary-button create-event-button"
-            onClick={() => setShowCreateForm(true)}
-          >
-            + Create Event
-          </button>
-        )}
+        {isAdmin &&
+          (showCreateForm ? (
+            <CreateEventForm
+              onCreateEvent={handleAddEvent}
+              onCancel={() => setShowCreateForm(false)}
+            />
+          ) : (
+            <button
+              className="primary-button create-event-button"
+              onClick={() => setShowCreateForm(true)}
+            >
+              + Create Event
+            </button>
+          ))}
       </main>
     </div>
   );

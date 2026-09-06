@@ -1,14 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import type { Event } from "../types/Event";
-import type { ReminderStatus } from "../types/Reminder";
+import type { Reminder, ReminderStatus } from "../types/Reminder";
+import { REMINDER_STATUSES } from "../types/Reminder";
+import type { Team } from "../types/Team";
 import { formatTime } from "../lib/formatTime";
+import { isVisibleToViewer } from "../lib/reminderVisibility";
+import { combineDateAndTime } from "../lib/dateTime";
 import EventChat from "../components/EventChat";
+import ReminderForm from "../components/ReminderForm";
 
 interface LiveEventPageProps {
   event: Event;
   session: Session;
+  isAdmin: boolean;
+  myTeamIds: string[];
+  teams: Team[];
   onExit: () => void;
+  onAddReminder: (
+    eventId: string,
+    reminder: Omit<Reminder, "id" | "eventId" | "teamName">
+  ) => void;
+  onCreateTeam: (name: string) => Promise<Team>;
   onUpdateReminderStatus: (
     eventId: string,
     reminderId: string,
@@ -20,17 +33,19 @@ interface LiveEventPageProps {
 // it's automatically marked missed (the outline's "auto-clicks red" rule).
 const MISSED_GRACE_MINUTES = 5;
 
-function getTriggerDateTime(event: Event, triggerTime: string): Date {
-  return new Date(`${event.date}T${triggerTime}:00`);
-}
-
 function LiveEventPage({
   event,
   session,
+  isAdmin,
+  myTeamIds,
+  teams,
   onExit,
+  onAddReminder,
+  onCreateTeam,
   onUpdateReminderStatus,
 }: LiveEventPageProps) {
   const [now, setNow] = useState(new Date());
+  const [showReminderForm, setShowReminderForm] = useState(false);
   const autoMissedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -43,7 +58,7 @@ function LiveEventPage({
       if (reminder.status !== "pending") continue;
       if (autoMissedRef.current.has(reminder.id)) continue;
 
-      const dueAt = getTriggerDateTime(event, reminder.triggerTime);
+      const dueAt = combineDateAndTime(event.date, reminder.triggerTime);
       const graceDeadline = new Date(dueAt.getTime() + MISSED_GRACE_MINUTES * 60_000);
 
       if (now >= graceDeadline) {
@@ -53,19 +68,24 @@ function LiveEventPage({
     }
   }, [now, event, onUpdateReminderStatus]);
 
+  // Admins run the show from the dashboard rather than executing tasks
+  // themselves, so they never get interrupted by a popup -- but they can
+  // still see and edit every reminder in the list below.
   const dueReminders = event.reminders
     .filter(
       (reminder) =>
+        !isAdmin &&
         reminder.status === "pending" &&
-        getTriggerDateTime(event, reminder.triggerTime) <= now
+        combineDateAndTime(event.date, reminder.triggerTime) <= now &&
+        isVisibleToViewer(reminder, myTeamIds)
     )
     .sort((a, b) => a.triggerTime.localeCompare(b.triggerTime));
 
   const activeReminder = dueReminders[0] ?? null;
 
-  const sortedReminders = [...event.reminders].sort((a, b) =>
-    a.triggerTime.localeCompare(b.triggerTime)
-  );
+  const sortedReminders = event.reminders
+    .filter((reminder) => isAdmin || isVisibleToViewer(reminder, myTeamIds))
+    .sort((a, b) => a.triggerTime.localeCompare(b.triggerTime));
 
   return (
     <div className="live-event-page">
@@ -79,9 +99,13 @@ function LiveEventPage({
         </button>
       </div>
 
-      {sortedReminders.length === 0 ? (
+      {event.reminders.length === 0 ? (
         <p className="reminders-empty">
           This event has no reminders yet — add some from the Edit page.
+        </p>
+      ) : sortedReminders.length === 0 ? (
+        <p className="reminders-empty">
+          No reminders assigned to your team for this event yet.
         </p>
       ) : (
         <ol className="reminders-list numbered">
@@ -95,17 +119,52 @@ function LiveEventPage({
                   )}
                 </p>
                 <p className="reminder-meta">
-                  {formatTime(reminder.triggerTime)} · {reminder.message}
+                  {formatTime(reminder.triggerTime)}
+                  {reminder.message ? ` · ${reminder.message}` : ""}
                 </p>
               </div>
 
-              <span className={`status-badge status-${reminder.status}`}>
-                {reminder.status}
-              </span>
+              <select
+                className={`status-select status-${reminder.status}`}
+                value={reminder.status}
+                onChange={(e) =>
+                  onUpdateReminderStatus(
+                    event.id,
+                    reminder.id,
+                    e.target.value as ReminderStatus
+                  )
+                }
+              >
+                {REMINDER_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
             </li>
           ))}
         </ol>
       )}
+
+      {isAdmin &&
+        (showReminderForm ? (
+          <ReminderForm
+            teams={teams}
+            onCreateTeam={onCreateTeam}
+            onCreateReminder={(reminder) => {
+              onAddReminder(event.id, reminder);
+              setShowReminderForm(false);
+            }}
+            onCancel={() => setShowReminderForm(false)}
+          />
+        ) : (
+          <button
+            className="secondary-button add-reminder-button"
+            onClick={() => setShowReminderForm(true)}
+          >
+            + Add Reminder
+          </button>
+        ))}
 
       <EventChat eventId={event.id} session={session} />
 
@@ -116,7 +175,9 @@ function LiveEventPage({
               {activeReminder.teamName ?? "Reminder"}
             </p>
             <h2>{activeReminder.title}</h2>
-            <p className="reminder-popup-message">{activeReminder.message}</p>
+            {activeReminder.message && (
+              <p className="reminder-popup-message">{activeReminder.message}</p>
+            )}
             <p className="reminder-popup-detail">
               {event.title} · {event.location}
             </p>

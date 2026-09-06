@@ -11,4 +11,5 @@ export interface Event {
   location: string;
   reminders: Reminder[];
   createdBy: string;
+  liveStartedAt: string | null;
 }

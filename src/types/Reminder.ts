@@ -4,13 +4,19 @@ export type ReminderStatus =
   | "completed"
   | "missed";
 
+export const REMINDER_STATUSES: ReminderStatus[] = [
+  "pending",
+  "acknowledged",
+  "completed",
+  "missed",
+];
+
 export interface Reminder {
   id: string;
   eventId: string;
   title: string;
-  message: string;
+  message: string | null;
   triggerTime: string;
-  assignedTo: string[];
   status: ReminderStatus;
   teamId: string | null;
   teamName: string | null;

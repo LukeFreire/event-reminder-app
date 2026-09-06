@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Event } from "../types/Event";
 import type { Reminder, ReminderStatus } from "../types/Reminder";
+import { REMINDER_STATUSES } from "../types/Reminder";
 import type { Team } from "../types/Team";
 import ReminderForm from "../components/ReminderForm";
 import { formatTime } from "../lib/formatTime";
@@ -23,13 +24,6 @@ interface EventEditPageProps {
   onDeleteReminder: (eventId: string, reminderId: string) => void;
   onDeleteEvent: (eventId: string) => void;
 }
-
-const REMINDER_STATUSES: ReminderStatus[] = [
-  "pending",
-  "acknowledged",
-  "completed",
-  "missed",
-];
 
 function EventEditPage({
   event,
@@ -188,7 +182,8 @@ function EventEditPage({
                     )}
                   </p>
                   <p className="reminder-meta">
-                    {formatTime(reminder.triggerTime)} · {reminder.message}
+                    {formatTime(reminder.triggerTime)}
+                    {reminder.message ? ` · ${reminder.message}` : ""}
                   </p>
                 </div>
 
